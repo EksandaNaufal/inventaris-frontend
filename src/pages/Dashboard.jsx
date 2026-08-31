@@ -10,16 +10,19 @@ import {
   PackagePlus,
   PackageMinus,
   Sparkles,
+  BarChart3,
 } from 'lucide-react';
 
 const BATAS_STOK_MENIPIS = 5;
 
 function Dashboard() {
   const { user } = useAuth();
+
   const [barangs, setBarangs] = useState([]);
-  const [totalKategori, setTotalKategori] = useState(0);
+  const [kategoris, setKategoris] = useState([]);
   const [barangMasuks, setBarangMasuks] = useState([]);
   const [barangKeluars, setBarangKeluars] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -34,7 +37,7 @@ function Dashboard() {
         ]);
 
         setBarangs(barangRes.data);
-        setTotalKategori(kategoriRes.data.length);
+        setKategoris(kategoriRes.data);
         setBarangMasuks(masukRes.data);
         setBarangKeluars(keluarRes.data);
       } catch (err) {
@@ -69,8 +72,24 @@ function Dashboard() {
     barangKeluars.filter((item) => item.tanggal_keluar === today).length;
 
   const stokMenipis = barangs
-    .filter((barang) => barang.jumlah < BATAS_STOK_MENIPIS)
-    .sort((a, b) => a.jumlah - b.jumlah);
+    .filter((barang) => Number(barang.jumlah) < BATAS_STOK_MENIPIS)
+    .sort((a, b) => Number(a.jumlah) - Number(b.jumlah));
+
+  const statistikKategori = kategoris
+    .map((kategori) => {
+      const total = barangs
+        .filter((barang) => Number(barang.kategori_id) === Number(kategori.id))
+        .reduce((total, barang) => total + Number(barang.jumlah || 0), 0);
+
+      return {
+        id: kategori.id,
+        nama: kategori.nama_kategori,
+        total,
+      };
+    })
+    .sort((a, b) => b.total - a.total);
+
+  const maxKategori = Math.max(...statistikKategori.map((item) => item.total), 1);
 
   const aktivitas = [
     ...barangMasuks.map((item) => ({
@@ -111,18 +130,17 @@ function Dashboard() {
 
   const stats = [
     { label: 'Total Jenis Barang', value: barangs.length, icon: Package, color: 'bg-brand-50 text-brand-700' },
-    { label: 'Total Kategori', value: totalKategori, icon: Tags, color: 'bg-gold-400/15 text-gold-500' },
+    { label: 'Total Kategori', value: kategoris.length, icon: Tags, color: 'bg-gold-400/15 text-gold-500' },
     { label: 'Transaksi Hari Ini', value: transaksiHariIni, icon: ArrowLeftRight, color: 'bg-blue-50 text-blue-600' },
   ];
 
   return (
     <div>
+      {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
         <div>
           <p className="text-sm text-gray-400">{hariIni}</p>
-          <h1 className="font-display text-2xl font-bold text-brand-800">
-            Halo, {namaDepan} 👋
-          </h1>
+          <h1 className="font-display text-2xl font-bold text-brand-800">Halo, {namaDepan} 👋</h1>
         </div>
 
         <div className="flex gap-2">
@@ -143,6 +161,7 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* CARD STATISTIK UTAMA */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -163,40 +182,89 @@ function Dashboard() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start" >
-        {/* Stok Menipis */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="h-5 w-5 text-red-500" strokeWidth={2} />
-            <h2 className="font-display text-lg font-semibold text-brand-800">Stok Menipis</h2>
-            <span className="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">
-              &lt; {BATAS_STOK_MENIPIS}
-            </span>
+      {/* KOLOM KIRI (STOK MENIPIS + STATISTIK) DAN KOLOM KANAN (AKTIVITAS) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+        {/* KOLOM KIRI */}
+        <div className="space-y-6">
+
+          {/* STOK MENIPIS */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="h-5 w-5 text-red-500" strokeWidth={2} />
+              <h2 className="font-display text-lg font-semibold text-brand-800">Stok Menipis</h2>
+              <span className="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">
+                &lt; {BATAS_STOK_MENIPIS}
+              </span>
+            </div>
+
+            {stokMenipis.length === 0 ? (
+              <div className="text-center py-8">
+                <Sparkles className="h-8 w-8 text-brand-200 mx-auto mb-2" strokeWidth={1.5} />
+                <p className="text-sm text-gray-400">Semua stok barang masih aman.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {stokMenipis.map((barang) => (
+                  <div
+                    key={barang.id}
+                    className="flex items-center justify-between py-2.5 px-3 bg-red-50/70 rounded-xl"
+                  >
+                    <span className="text-sm font-medium text-gray-800">{barang.nama_barang}</span>
+                    <span className="text-sm font-bold text-red-600">
+                      {barang.jumlah} <span className="font-normal text-red-400">{barang.satuan}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {stokMenipis.length === 0 ? (
-            <div className="text-center py-8">
-              <Sparkles className="h-8 w-8 text-brand-200 mx-auto mb-2" strokeWidth={1.5} />
-              <p className="text-sm text-gray-400">Semua stok barang masih aman.</p>
+          {/* STATISTIK BERDASARKAN KATEGORI */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="font-display text-lg font-semibold text-brand-800">
+                  Statistik Barang Berdasarkan Kategori
+                </h2>
+                <p className="text-xs text-gray-400 mt-1">Jumlah stok barang berdasarkan kategori</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center">
+                <BarChart3 className="h-5 w-5" strokeWidth={1.75} />
+              </div>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {stokMenipis.map((barang) => (
-                <div
-                  key={barang.id}
-                  className="flex items-center justify-between py-2.5 px-3 bg-red-50/70 rounded-xl"
-                >
-                  <span className="text-sm font-medium text-gray-800">{barang.nama_barang}</span>
-                  <span className="text-sm font-bold text-red-600">
-                    {barang.jumlah} <span className="font-normal text-red-400">{barang.satuan}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+
+            {statistikKategori.length === 0 ? (
+              <div className="text-center py-8">
+                <Tags className="h-8 w-8 text-gray-200 mx-auto mb-2" strokeWidth={1.5} />
+                <p className="text-sm text-gray-400">Belum ada data kategori.</p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {statistikKategori.map((item) => {
+                  const persentase = (item.total / maxKategori) * 100;
+                  return (
+                    <div key={item.id}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">{item.nama}</span>
+                        <span className="text-sm font-semibold text-brand-800">{item.total} barang</span>
+                      </div>
+                      <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-brand-500 rounded-full transition-all duration-500"
+                          style={{ width: `${persentase}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
         </div>
 
-        {/* Aktivitas Terbaru */}
+        {/* AKTIVITAS TERBARU */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <h2 className="font-display text-lg font-semibold text-brand-800 mb-4">Aktivitas Terbaru</h2>
 
@@ -236,6 +304,7 @@ function Dashboard() {
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

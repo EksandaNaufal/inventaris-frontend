@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../Api/axios';
 import { Menu, LogOut, Bell } from 'lucide-react';
+import { useUI } from '../context/UIContext';
 
 const PAGE_TITLES = {
   '/': 'Dashboard',
@@ -48,8 +49,11 @@ function Header({ onMenuClick }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const { confirm } = useUI();
+
   const handleLogout = async () => {
-    if (!confirm('Yakin ingin keluar?')) return;
+    const ok = await confirm('Yakin ingin keluar dari sistem?', { title: 'Keluar', danger: true });
+    if (!ok) return;
     await logout();
   };
 

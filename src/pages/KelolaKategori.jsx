@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import api from '../Api/axios';
 import { Tags, Plus, Trash2, X } from 'lucide-react';
+import { useUI } from '../context/UIContext';
 
 function KelolaKategori() {
   const [kategoris, setKategoris] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { toast, confirm } = useUI();
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ nama_kategori: '', keterangan: '' });
@@ -39,6 +41,7 @@ function KelolaKategori() {
       setFormData({ nama_kategori: '', keterangan: '' });
       setShowForm(false);
       fetchData();
+      toast.success('Kategori berhasil ditambahkan.');
     } catch (err) {
       if (err.response?.data?.errors) {
         setFormError(Object.values(err.response.data.errors).flat().join(', '));
@@ -52,12 +55,17 @@ function KelolaKategori() {
   };
 
   const handleDelete = async (id, nama) => {
-    if (!confirm(`Yakin ingin menghapus kategori "${nama}"? Barang yang memakai kategori ini juga akan terhapus.`)) return;
+    const ok = await confirm(
+      `Yakin ingin menghapus kategori "${nama}"? Barang yang memakai kategori ini juga akan terhapus.`,
+      { title: 'Hapus Kategori', danger: true }
+    );
+    if (!ok) return;
     try {
       await api.delete(`/kategoris/${id}`);
       fetchData();
+      toast.success('Kategori berhasil dihapus.');
     } catch (err) {
-      alert('Gagal menghapus kategori.');
+      toast.error('Gagal menghapus kategori.');
       console.error(err);
     }
   };

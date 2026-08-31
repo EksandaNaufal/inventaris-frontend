@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../Api/axios';
 import { useAuth } from '../context/AuthContext';
 import { PackagePlus, Plus, X, Trash2 } from 'lucide-react';
+import { useUI } from '../context/UIContext';
 
 function BarangMasuk() {
   const { user } = useAuth();
@@ -9,6 +10,7 @@ function BarangMasuk() {
   const [barangs, setBarangs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { toast, confirm } = useUI();
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -49,6 +51,7 @@ function BarangMasuk() {
       });
       setShowForm(false);
       fetchData();
+      toast.success('Barang masuk berhasil dicatat.');
     } catch (err) {
       if (err.response?.data?.errors) {
         setFormError(Object.values(err.response.data.errors).flat().join(', '));
@@ -62,12 +65,16 @@ function BarangMasuk() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Yakin ingin menghapus riwayat ini? Stok barang akan dikurangi kembali.')) return;
+    const ok = await confirm('Yakin ingin menghapus riwayat ini? Stok barang akan dikurangi kembali.', {
+      title: 'Hapus Riwayat', danger: true,
+    });
+    if (!ok) return;
     try {
       await api.delete(`/barang-masuks/${id}`);
       fetchData();
+      toast.success('Riwayat berhasil dihapus.');
     } catch (err) {
-      alert('Gagal menghapus data.');
+      toast.error('Gagal menghapus data.');
       console.error(err);
     }
   };

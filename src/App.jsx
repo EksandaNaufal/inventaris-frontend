@@ -8,45 +8,48 @@ import KelolaBarang from './pages/KelolaBarang';
 import BarangMasuk from './pages/BarangMasuk';
 import BarangKeluar from './pages/BarangKeluar';
 import KelolaKategori from './pages/KelolaKategori';
+import { UIProvider } from './context/UIContext';
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-
-          <Route
-            element={
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/barang-masuk" element={<BarangMasuk />} />
-            <Route path="/barang-keluar" element={<BarangKeluar />} />
+    <UIProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
 
             <Route
-              path="/kelola-barang"
               element={
-                <ProtectedRoute allowedRoles={['kepala_sapras']}>
-                  <KelolaBarang />
+                <ProtectedRoute>
+                  <MainLayout />
                 </ProtectedRoute>
               }
-            />
-            <Route
-              path="/kelola-kategori"
-              element={
-                <ProtectedRoute allowedRoles={['kepala_sapras']}>
-                  <KelolaKategori />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            >
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/barang-masuk" element={<BarangMasuk />} />
+              <Route path="/barang-keluar" element={<BarangKeluar />} />
+
+              <Route
+                path="/kelola-barang"
+                element={
+                  <ProtectedRoute allowedRoles={['kepala_sapras']}>
+                    <KelolaBarang />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/kelola-kategori"
+                element={
+                  <ProtectedRoute allowedRoles={['kepala_sapras']}>
+                    <KelolaKategori />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </UIProvider>
   );
 }
 

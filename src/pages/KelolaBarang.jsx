@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import api from '../Api/axios';
 import { Package, Plus, X, Pencil, Trash2 } from 'lucide-react';
+import { useUI } from '../context/UIContext';
 
 function KelolaBarang() {
   const [barangs, setBarangs] = useState([]);
   const [kategoris, setKategoris] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { toast, confirm } = useUI();
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -52,6 +54,7 @@ function KelolaBarang() {
       setFormData({ kode_barang: '', nama_barang: '', kategori_id: '', jumlah: '', satuan: '', keterangan: '' });
       setShowForm(false);
       fetchData();
+      toast.success('Barang berhasil ditambahkan.');
     } catch (err) {
       if (err.response?.data?.errors) {
         setFormError(Object.values(err.response.data.errors).flat().join(', '));
@@ -65,13 +68,15 @@ function KelolaBarang() {
   };
 
   const handleDelete = async (id, nama) => {
-    if (!confirm(`Yakin ingin menghapus "${nama}"?`)) return;
+    const ok = await confirm(`Yakin ingin menghapus "${nama}"?`, { title: 'Hapus Barang', danger: true });
+    if (!ok) return;
     try {
       await api.delete(`/barangs/${id}`);
       setSelectedBarang(null);
       fetchData();
+      toast.success('Barang berhasil dihapus.');
     } catch (err) {
-      alert('Gagal menghapus barang.');
+      toast.error('Gagal menghapus barang.');
       console.error(err);
     }
   };
@@ -100,6 +105,7 @@ function KelolaBarang() {
       await api.put(`/barangs/${editingBarang.id}`, editFormData);
       setEditingBarang(null);
       fetchData();
+      toast.success('Perubahan berhasil disimpan.');
     } catch (err) {
       if (err.response?.data?.errors) {
         setEditError(Object.values(err.response.data.errors).flat().join(', '));
